@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-    title: "Star Wars App",
-    description: "A Star Wars database",
+    title: "Star Wars Holocron",
+    description: "A Star Wars simple Holocron",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode; }>) {
