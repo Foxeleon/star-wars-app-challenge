@@ -1,66 +1,113 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueries } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { fetchResourceById } from "@/services/swapi";
-import { ResourceType, DisplayableResource, Planet } from "@/types";
+import { ResourceType, DisplayableResource } from "@/types";
 
-/**
- * A specialized component to fetch and display the name of a homeworld from its URL.
- * It encapsulates its own data-fetching logic.
- */
-function HomeworldLink({ url }: { url: string }) {
-    const { data: planet, isLoading } = useQuery<Planet, Error>({
-        queryKey: ['planet', url],
+// --- SUB-COMPONENTS for rendering related data ---
+
+function SingleResourceLink({ url, title }: { url: string; title: string }) {
+    const { data, isLoading } = useQuery<DisplayableResource, Error>({
+        queryKey: ['resource', url],
         queryFn: async () => {
             const res = await fetch(url);
             if (!res.ok) {
-                throw new Error('Failed to fetch homeworld');
+                throw new Error('Failed to fetch linked resource');
             }
             return res.json();
         },
-        staleTime: Infinity, // Planet data is static, so we can cache it forever
+        staleTime: Infinity,
     });
 
-    if (isLoading) return <>Loading...</>;
+    if (isLoading) return <p><strong className="capitalize">{title}:</strong> Loading...</p>;
 
-    const planetId = url.split("/").filter(Boolean).pop();
+    const urlParts = url.split('/').filter(Boolean);
+    const resourceType = urlParts[urlParts.length - 2] as ResourceType;
+    const id = urlParts[urlParts.length - 1];
 
     return (
-        <Link href={`/planets/${planetId}`} className="text-blue-400 hover:underline">
-            {planet?.name || 'Unknown'}
-        </Link>
+        <p>
+            <strong className="capitalize">{title}:</strong>
+            <Link href={`/${resourceType}/${id}`} className="text-blue-400 hover:underline ml-2">
+                {data?.name || data?.title || 'Unknown'}
+            </Link>
+        </p>
     );
 }
 
-/**
- * The main component for rendering all details of a resource.
- */
+function RelatedLinksList({ urls, title }: { urls: string[]; title: string; }) {
+    const queries = useQueries({
+        queries: urls.map(url => ({
+            queryKey: ['resource', url],
+            queryFn: async () => {
+                const res = await fetch(url);
+                if (!res.ok) {
+                    throw new Error('Failed to fetch related resource list');
+                }
+                return res.json();
+            },
+            staleTime: Infinity,
+        })),
+    });
+
+    if (!urls || urls.length === 0) return null;
+
+    return (
+        <div className="col-span-1 sm:col-span-2">
+            <strong className="capitalize">{title}:</strong>
+            <div className="flex flex-wrap gap-2 mt-1">
+                {queries.map(({ data, isLoading }, index) => {
+                    if (isLoading) return <Button key={index} variant="outline" size="sm" className="h-auto py-1 px-2 text-xs" disabled>Loading...</Button>;
+
+                    const urlParts = urls[index].split('/').filter(Boolean);
+                    const resourceType = urlParts[urlParts.length - 2] as ResourceType;
+                    const id = urlParts[urlParts.length - 1];
+
+                    return (
+                        <Link key={urls[index]} href={`/${resourceType}/${id}`} passHref>
+                            <Button variant="outline" size="sm" className="h-auto py-1 px-2 text-xs">
+                                {data?.name || data?.title || 'Unknown'}
+                            </Button>
+                        </Link>
+                    );
+                })}
+            </div>
+        </div>
+    );
+}
+
 function ResourceFullDetails({ resource }: { resource: DisplayableResource }) {
     const details = Object.entries(resource).map(([key, value]) => {
-        if (['name', 'title', 'url', 'created', 'edited'].includes(key) || Array.isArray(value)) {
+        const formattedKey = key.replace(/_/g, ' ');
+
+        if (['name', 'title', 'url', 'created', 'edited'].includes(key)) {
             return null;
         }
-        if (key === 'homeworld' && typeof value === 'string') {
-            return (
-                <p key={key}>
-                    <strong className="capitalize">Homeworld:</strong> <HomeworldLink url={value} />
-                </p>
-            );
+
+        if (Array.isArray(value) && value.length > 0 && typeof value[0] === 'string' && value[0].includes('http')) {
+            return <RelatedLinksList key={key} urls={value} title={formattedKey} />;
+        }
+
+        if (typeof value === 'string' && value.includes('http')) {
+            return <SingleResourceLink key={key} url={value} title={formattedKey} />;
         }
 
         return (
             <p key={key}>
-                <strong className="capitalize">{key.replace(/_/g, ' ')}:</strong> {String(value)}
+                <strong className="capitalize">{formattedKey}:</strong> {String(value)}
             </p>
         );
     });
 
     return <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">{details}</div>;
 }
+
+
+// --- MAIN CLIENT COMPONENT ---
 
 interface DetailsPageProps {
     resourceType: ResourceType;
@@ -82,7 +129,7 @@ export default function DetailsClient({ resourceType, id }: DetailsPageProps) {
         if (tab && page) {
             router.push(`/?tab=${tab}&page=${page}`);
         } else {
-            router.back(); // Fallback for direct navigation or history loss
+            router.back();
         }
     };
 
