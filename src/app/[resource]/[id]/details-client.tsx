@@ -5,14 +5,59 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { fetchResourceById } from "@/services/swapi";
-import { ResourceType, DisplayableResource } from "@/types";
+import { ResourceType, DisplayableResource, Planet } from "@/types";
 
-function ResourceFullDetails({ resource }: { resource: DisplayableResource; type: ResourceType }) {
+/**
+ * A specialized component to fetch and display the name of a homeworld from its URL.
+ * It encapsulates its own data-fetching logic.
+ */
+function HomeworldLink({ url }: { url: string }) {
+    const { data: planet, isLoading } = useQuery<Planet, Error>({
+        // Use the URL as the query key to ensure uniqueness
+        queryKey: ['planet', url],
+        // The query function is a simple fetch call to the provided URL
+        queryFn: async () => {
+            const res = await fetch(url);
+            if (!res.ok) {
+                throw new Error('Failed to fetch homeworld');
+            }
+            return res.json();
+        },
+        staleTime: Infinity, // Planet data is static, so we can cache it forever
+    });
+
+    if (isLoading) return <>Loading...</>;
+
+    // Extract the planet ID from its URL to create a link
+    const planetId = url.split("/").filter(Boolean).pop();
+
+    return (
+        <Link href={`/planets/${planetId}`} className="text-blue-400 hover:underline">
+            {planet?.name || 'Unknown'}
+        </Link>
+    );
+}
+
+
+/**
+ * The main component for rendering all details of a resource.
+ * It now intelligently handles the 'homeworld' key.
+ */
+function ResourceFullDetails({ resource }: { resource: DisplayableResource }) {
     const details = Object.entries(resource).map(([key, value]) => {
-        // Skip keys that we don't want to display
-        if (['name', 'title', 'url', 'created', 'edited', 'homeworld'].includes(key) || Array.isArray(value)) {
+        // Skip keys that are not useful for the user
+        if (['name', 'title', 'url', 'created', 'edited'].includes(key) || Array.isArray(value)) {
             return null;
         }
+        if (key === 'homeworld' && typeof value === 'string') {
+            return (
+                <p key={key}>
+                    <strong className="capitalize">Homeworld:</strong> <HomeworldLink url={value} />
+                </p>
+            );
+        }
+
+        // For all other keys, render them as simple text
         return (
             <p key={key}>
                 <strong className="capitalize">{key.replace(/_/g, ' ')}:</strong> {String(value)}
@@ -46,7 +91,7 @@ export default function DetailsClient({ resourceType, id }: DetailsPageProps) {
                     <CardTitle className="text-3xl">{name}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    {resource && <ResourceFullDetails resource={resource} type={resourceType} />}
+                    {resource && <ResourceFullDetails resource={resource} />}
                 </CardContent>
             </Card>
             <Link href="/">
