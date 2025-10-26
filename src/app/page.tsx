@@ -48,9 +48,11 @@ export default function HomePage() {
         <main className="container mx-auto p-4 md:p-8">
             <h1 className="text-4xl font-bold text-center mb-8">Star Wars Holocron</h1>
             <Tabs value={activeResource} onValueChange={handleTabChange} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6 mb-8">
+                <TabsList className="h-auto w-full justify-start overflow-x-auto mb-8">
                     {resources.map((res) => (
-                        <TabsTrigger key={res} value={res} className="capitalize">{res}</TabsTrigger>
+                        <TabsTrigger key={res} value={res} className="capitalize flex-shrink-0">
+                            {res}
+                        </TabsTrigger>
                     ))}
                 </TabsList>
                 <TabsContent value={activeResource} forceMount>
