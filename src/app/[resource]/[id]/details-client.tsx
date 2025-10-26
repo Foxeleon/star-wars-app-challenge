@@ -15,9 +15,7 @@ function SingleResourceLink({ url, title }: { url: string; title: string }) {
         queryKey: ['resource', url],
         queryFn: async () => {
             const res = await fetch(url);
-            if (!res.ok) {
-                throw new Error('Failed to fetch linked resource');
-            }
+            if (!res.ok) throw new Error('Failed to fetch linked resource');
             return res.json();
         },
         staleTime: Infinity,
@@ -45,16 +43,12 @@ function RelatedLinksList({ urls, title }: { urls: string[]; title: string; }) {
             queryKey: ['resource', url],
             queryFn: async () => {
                 const res = await fetch(url);
-                if (!res.ok) {
-                    throw new Error('Failed to fetch related resource list');
-                }
+                if (!res.ok) throw new Error('Failed to fetch related resource list');
                 return res.json();
             },
             staleTime: Infinity,
         })),
     });
-
-    if (!urls || urls.length === 0) return null;
 
     return (
         <div className="col-span-1 sm:col-span-2">
@@ -80,6 +74,10 @@ function RelatedLinksList({ urls, title }: { urls: string[]; title: string; }) {
     );
 }
 
+/**
+ * The main component for rendering all details of a resource.
+ * It now correctly handles empty arrays.
+ */
 function ResourceFullDetails({ resource }: { resource: DisplayableResource }) {
     const details = Object.entries(resource).map(([key, value]) => {
         const formattedKey = key.replace(/_/g, ' ');
@@ -88,8 +86,13 @@ function ResourceFullDetails({ resource }: { resource: DisplayableResource }) {
             return null;
         }
 
-        if (Array.isArray(value) && value.length > 0 && typeof value[0] === 'string' && value[0].includes('http')) {
-            return <RelatedLinksList key={key} urls={value} title={formattedKey} />;
+        if (Array.isArray(value)) {
+            // If the array has URLs, render the list.
+            if (value.length > 0 && typeof value[0] === 'string' && value[0].includes('http')) {
+                return <RelatedLinksList key={key} urls={value} title={formattedKey} />;
+            }
+            // If the array is empty or doesn't contain URLs, render nothing.
+            return null;
         }
 
         if (typeof value === 'string' && value.includes('http')) {
