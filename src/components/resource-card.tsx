@@ -80,16 +80,24 @@ function ResourceCardDetails({ resource, type }: {
     }
 }
 
+interface ResourceCardProps {
+    resource: DisplayableResource;
+    type: ResourceType;
+    page: number;
+}
+
 /**
  * The main card component, responsible for the overall structure,
  * animations, and linking.
  */
-export function ResourceCard({ resource, type }: {
-    resource: DisplayableResource;
-    type: ResourceType;
-}) {
+export function ResourceCard({ resource, type, page }: ResourceCardProps) {
     const id = resource.url.split("/").filter(Boolean).pop();
     const name = resource.name || resource.title;
+
+    // Create search params manually to include the current page and tab
+    const searchParams = new URLSearchParams();
+    searchParams.set('tab', type);
+    searchParams.set('page', String(page));
 
     return (
         <Card className="w-full max-w-sm sm:w-[280px] flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-2">
@@ -100,7 +108,7 @@ export function ResourceCard({ resource, type }: {
                 <ResourceCardDetails resource={resource} type={type} />
             </CardContent>
             <CardFooter>
-                <Link href={`/${type}/${id}`} className="w-full" passHref>
+                <Link href={`/${type}/${id}?${searchParams.toString()}`} className="w-full" passHref>
                     <Button className="w-full">Details</Button>
                 </Link>
             </CardFooter>

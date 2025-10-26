@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -69,18 +69,20 @@ interface DetailsPageProps {
 
 export default function DetailsClient({ resourceType, id }: DetailsPageProps) {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { data: resource, isLoading, isError, error } = useQuery<DisplayableResource, Error>({
         queryKey: [resourceType, id],
         queryFn: () => fetchResourceById(resourceType, id),
     });
 
-    // NEW: Smart handler for the back button
     const handleBack = () => {
-        // Check if there is a previous page in the browser's history stack
-        if (window.history.length > 1) {
-            router.back(); // Go back to the previous page (e.g., the list or another detail page)
+        const tab = searchParams.get('tab');
+        const page = searchParams.get('page');
+
+        if (tab && page) {
+            router.push(`/?tab=${tab}&page=${page}`);
         } else {
-            router.push('/'); // If no history, navigate to the homepage as a fallback
+            router.back(); // Fallback for direct navigation or history loss
         }
     };
 
