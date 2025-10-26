@@ -61,7 +61,7 @@ export function AmbientMusicToggle() {
                 className="fixed top-4 right-4 z-50"
                 aria-label={isPlaying ? "Pause ambient music" : "Play ambient music"}
             >
-                {isPlaying ? <VolumeX className="h-5 w-5" /> : <Music className="h-5 w-5" />}
+                {isPlaying ? <Music className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
             </Button>
         </>
     );
