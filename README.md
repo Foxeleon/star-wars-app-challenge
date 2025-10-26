@@ -2,14 +2,15 @@
 
 This project is a modern web application built with Next.js and TypeScript. It serves as a digital Holocron, allowing users to browse various resources from the Star Wars universe (including People, Planets, Films, and more) by fetching data from the [SWAPI (The Star Wars API)](https://swapi.py4e.com/).
 
-The application showcases a clean, responsive interface with client-side data fetching, caching, and a polished user experience, including hover animations and atmospheric background music.
+The application showcases a clean, responsive interface with client-side data fetching, caching, and a polished user experience, including hover animations, atmospheric background music, and intelligent, cross-linked data.
 
 ## Features
 
-- **Universal Resource Browser**: Displays a paginated list of various Star Wars resources. Users can switch between People, Planets, Films, Species, Vehicles, and Starships using an intuitive tab-based navigation.
-- **Adaptive Layout**: A fully responsive layout that uses modern CSS Flexbox for perfect alignment of resource cards on any screen size.
-- **Dynamic Details Page**: Clicking on an item's "Details" button navigates to a universal, dynamically-generated page that displays all relevant information for that specific resource.
-- **Client-Side Caching**: Utilizes TanStack Query (`@tanstack/react-query`) to efficiently fetch, cache, and manage server state.
+- **Universal Resource Browser**: Displays a paginated list of various Star Wars resources. Users can switch between People, Planets, Films, Species, Vehicles, and Starships using an intuitive, horizontally-scrollable tab navigation that works perfectly on mobile devices.
+- **Stateful URLs**: The application's state (current tab and page number) is stored in the URL's query parameters. This allows for bookmarking and sharing links to specific views.
+- **Deep Linking and Smart Navigation**: The app features a fully interconnected data experience. Clicking on related items (like a character's `homeworld` or a film's `characters`) navigates to the respective detail page. An intelligent "Back" button then correctly returns the user to the exact previous page, preserving the context.
+- **Dynamic Details Page**: Clicking "Details" navigates to a universal, dynamically-generated page that displays all relevant information for any resource, including resolving and linking related data arrays (e.g., listing all films a character appeared in).
+- **Client-Side Caching**: Utilizes TanStack Query (`@tanstack/react-query` and `useQueries`) to efficiently fetch, cache, and manage server state, including parallel fetching of related data.
 - **Smooth Pagination**: `keepPreviousData` is enabled for a seamless user experience while navigating between pages, preventing UI flickering.
 - **Interactive UI**: Cards feature subtle hover animations (lift and shadow) to provide clear visual feedback.
 - **Atmospheric Audio (Bonus)**: An optional toggle in the top-right corner allows users to play and pause the iconic Star Wars theme music for a more immersive experience.
@@ -29,6 +30,7 @@ This project is built on a modern, robust, and scalable tech stack:
 ## Project Structure
 
 The project follows the standard Next.js App Router structure, leveraging catch-all segments for maximum code reuse and scalability.
+
 ```
 ├── public/
 │ └── favicon.ico
@@ -88,6 +90,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser to see the a
 ## Architectural Decisions & Learnings
 
 - **Catch-all Dynamic Routes**: The application uses a `[resource]/[id]` route structure to handle all detail pages with a single set of components. This is a powerful Next.js pattern that maximizes code reuse and simplifies the project structure.
-- **Server and Client Component Synergy**: The detail page (`page.tsx`) is a Server Component that extracts URL parameters, which are then passed to a Client Component (`details-client.tsx`) that handles data fetching and state management with `useQuery`.
+- **Server and Client Component Synergy**: The detail page (`page.tsx`) is a Server Component that extracts URL parameters, which are then passed to a Client Component (`details-client.tsx`) that handles all data fetching, state management, and interactivity.
+- **Parallel Queries with `useQueries`**: The detail page efficiently fetches and displays lists of related resources (e.g., a character's films) by running multiple fetch requests in parallel using the `useQueries` hook from TanStack Query.
+- **State in URL**: The application state (active tab, page number) is managed via URL query parameters, providing a robust solution for history, bookmarking, and link sharing, which enables a truly reliable "Back" button functionality.
 - **API Limitations**: During development, it was discovered that the public SWAPI has a fixed page size of 10 and does not support a `limit` parameter. The architecture was adapted to work efficiently within this constraint, favoring a standard server-side pagination model.
-- **State Management**: TanStack Query was chosen for its powerful caching capabilities, which significantly improve the user experience by reducing unnecessary network requests and providing features like `keepPreviousData`.
