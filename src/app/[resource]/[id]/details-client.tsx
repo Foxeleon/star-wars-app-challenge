@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -13,9 +14,7 @@ import { ResourceType, DisplayableResource, Planet } from "@/types";
  */
 function HomeworldLink({ url }: { url: string }) {
     const { data: planet, isLoading } = useQuery<Planet, Error>({
-        // Use the URL as the query key to ensure uniqueness
         queryKey: ['planet', url],
-        // The query function is a simple fetch call to the provided URL
         queryFn: async () => {
             const res = await fetch(url);
             if (!res.ok) {
@@ -28,7 +27,6 @@ function HomeworldLink({ url }: { url: string }) {
 
     if (isLoading) return <>Loading...</>;
 
-    // Extract the planet ID from its URL to create a link
     const planetId = url.split("/").filter(Boolean).pop();
 
     return (
@@ -38,14 +36,11 @@ function HomeworldLink({ url }: { url: string }) {
     );
 }
 
-
 /**
  * The main component for rendering all details of a resource.
- * It now intelligently handles the 'homeworld' key.
  */
 function ResourceFullDetails({ resource }: { resource: DisplayableResource }) {
     const details = Object.entries(resource).map(([key, value]) => {
-        // Skip keys that are not useful for the user
         if (['name', 'title', 'url', 'created', 'edited'].includes(key) || Array.isArray(value)) {
             return null;
         }
@@ -57,7 +52,6 @@ function ResourceFullDetails({ resource }: { resource: DisplayableResource }) {
             );
         }
 
-        // For all other keys, render them as simple text
         return (
             <p key={key}>
                 <strong className="capitalize">{key.replace(/_/g, ' ')}:</strong> {String(value)}
@@ -74,10 +68,21 @@ interface DetailsPageProps {
 }
 
 export default function DetailsClient({ resourceType, id }: DetailsPageProps) {
+    const router = useRouter();
     const { data: resource, isLoading, isError, error } = useQuery<DisplayableResource, Error>({
         queryKey: [resourceType, id],
         queryFn: () => fetchResourceById(resourceType, id),
     });
+
+    // NEW: Smart handler for the back button
+    const handleBack = () => {
+        // Check if there is a previous page in the browser's history stack
+        if (window.history.length > 1) {
+            router.back(); // Go back to the previous page (e.g., the list or another detail page)
+        } else {
+            router.push('/'); // If no history, navigate to the homepage as a fallback
+        }
+    };
 
     if (isLoading) return <div className="text-center p-10">Loading Holocron entry...</div>;
     if (isError) return <div className="text-center p-10 text-red-500">Data corrupted: {error.message}</div>;
@@ -94,9 +99,14 @@ export default function DetailsClient({ resourceType, id }: DetailsPageProps) {
                     {resource && <ResourceFullDetails resource={resource} />}
                 </CardContent>
             </Card>
-            <Link href="/">
-                <Button variant="outline">Back to Holocron</Button>
-            </Link>
+            <div className="w-full max-w-4xl flex justify-between items-center">
+                <Link href="/">
+                    <Button variant="ghost">Back to Holocron Homepage</Button>
+                </Link>
+                <Button onClick={handleBack} variant="outline">
+                    Back
+                </Button>
+            </div>
         </div>
     );
 }
