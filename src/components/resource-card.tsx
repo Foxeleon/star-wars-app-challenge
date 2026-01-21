@@ -108,7 +108,7 @@ export function ResourceCard({ resource, type, page }: ResourceCardProps) {
                 <ResourceCardDetails resource={resource} type={type} />
             </CardContent>
             <CardFooter>
-                <Link href={`/${type}/${id}?${searchParams.toString()}`} className="w-full bg-primary" passHref>
+                <Link href={`/${type}/${id}?${searchParams.toString()}`} className="w-full" passHref>
                     <Button className="w-full">Details</Button>
                 </Link>
             </CardFooter>
